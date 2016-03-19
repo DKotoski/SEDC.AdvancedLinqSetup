@@ -45,6 +45,7 @@
     <Compile Include="Comment.cs" />
     <Compile Include="Company.cs" />
     <Compile Include="DataContext.cs" />
+    <Compile Include="DataContextSerializable.cs" />
     <Compile Include="Geo.cs" />
     <Compile Include="Photo.cs" />
     <Compile Include="Post.cs" />

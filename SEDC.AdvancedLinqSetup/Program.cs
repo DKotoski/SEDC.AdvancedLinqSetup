@@ -14,13 +14,28 @@ namespace SEDC.AdvancedLinqSetup
         {
             Utils.InitData();
 
-            Console.ReadLine();
-            var x = DataContext.Users;
+                var userComments = DataContext.Users.Join(
+                DataContext.Posts, 
+                x => x.id, 
+                y => y.userId, 
+                (x,y)=>new
+                {
+                    UserId = x.id,
+                    Name = x.name,
+                    PostID = y.id
+                }).Join(
+                DataContext.Comments,
+                x => x.PostID,
+                y => y.postId,
+                (x, y) => new
+                {
+                    Name = x.Name,
+                    Comment = y.body
+                }).ToList();
 
-            Console.ReadLine();
-        }
-
-      
+            userComments.ForEach(x => Console.WriteLine(x));
+            Console.ReadLine();            
+        }    
         
 
     }

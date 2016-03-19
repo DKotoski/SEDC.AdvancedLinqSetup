@@ -17,53 +17,98 @@ namespace SEDC.AdvancedLinqSetup
         public static void InitData()
         {
             Console.WriteLine("Downloading page...");
+            List<User> users = new List<User>();
+            List<Post> posts = new List<Post>();
+            List<Comment> comments = new List<Comment>();
+            List<Album> albums = new List<Album>();
+            List<Photo> photos = new List<Photo>();
+            List<Todo> todos = new List<Todo>();
 
-
-            var users = DownloadPageAsync<List<User>>("http://jsonplaceholder.typicode.com/users").Result;
-
-            var posts = DownloadPageAsync<List<Post>>("http://jsonplaceholder.typicode.com/posts").Result;
-
-            var comments = DownloadPageAsync<List<Comment>>("http://jsonplaceholder.typicode.com/comments").Result;
-
-            var albums = DownloadPageAsync<List<Album>>("http://jsonplaceholder.typicode.com/albums").Result;
-
-            var photos = DownloadPageAsync<List<Photo>>("http://jsonplaceholder.typicode.com/photos").Result;
-
-            var todos = DownloadPageAsync<List<Todo>>("http://jsonplaceholder.typicode.com/todos").Result;
-
-            foreach (var comment in comments)
+            try
             {
-                posts.Where(x => x.id == comment.postId).ToList().ForEach(x => x.comments.Add(comment));
-            }
+                var DataContextDeserialized = DeserializeObject<DataContextSerializable>("DataContext.xml");
 
-            foreach (var post in posts)
+                 users = DataContextDeserialized.Users;
+
+                 posts = DataContextDeserialized.Posts;
+
+                 comments = DataContextDeserialized.Comments;
+
+                 albums = DataContextDeserialized.Albums;
+
+                 photos = DataContextDeserialized.Photos;
+
+                 todos = DataContextDeserialized.Todos;
+
+
+            }
+            catch (Exception)
             {
-                users.Where(x => x.id == post.userId).ToList().ForEach(x => x.posts.Add(post));
-            }
+                 users = DownloadPageAsync<List<User>>("http://jsonplaceholder.typicode.com/users").Result;
 
-            foreach (var photo in photos)
+                 posts = DownloadPageAsync<List<Post>>("http://jsonplaceholder.typicode.com/posts").Result;
+
+                 comments = DownloadPageAsync<List<Comment>>("http://jsonplaceholder.typicode.com/comments").Result;
+
+                 albums = DownloadPageAsync<List<Album>>("http://jsonplaceholder.typicode.com/albums").Result;
+
+                 photos = DownloadPageAsync<List<Photo>>("http://jsonplaceholder.typicode.com/photos").Result;
+
+                 todos = DownloadPageAsync<List<Todo>>("http://jsonplaceholder.typicode.com/todos").Result;
+
+                var dataContextToSerialize = new DataContextSerializable
+                {
+                    Users = users,
+                    Posts = posts,
+                    Comments = comments,
+                    Albums = albums,
+                    Photos = photos,
+                    Todos = todos
+                };
+
+                SerializeObject(dataContextToSerialize, "DataContext.xml");
+
+            }
+            finally
             {
-                albums.Where(x => x.id == photo.albumId).ToList().ForEach(x => x.photos.Add(photo));
+                foreach (var comment in comments)
+                {
+                    posts.Where(x => x.id == comment.postId).ToList()
+                        .ForEach(x => x.comments.Add(comment));
+                }
+
+                foreach (var post in posts)
+                {
+                    users.Where(x => x.id == post.userId).ToList()
+                        .ForEach(x => x.posts.Add(post));
+                }
+
+                foreach (var photo in photos)
+                {
+                    albums.Where(x => x.id == photo.albumId).ToList()
+                        .ForEach(x => x.photos.Add(photo));
+                }
+
+                foreach (var album in albums)
+                {
+                    users.Where(x => x.id == album.userId).ToList()
+                        .ForEach(x => x.albums.Add(album));
+                }
+
+                foreach (var todo in todos)
+                {
+                    users.Where(x => x.id == todo.userId).ToList()
+                        .ForEach(x => x.todos.Add(todo));
+                }
+
+                DataContext.Users = users;
+                DataContext.Albums = albums;
+                DataContext.Comments = comments;
+                DataContext.Photos = photos;
+                DataContext.Posts = posts;
+                DataContext.Todos = todos;
+                Console.WriteLine("Downloading Complete");
             }
-
-            foreach (var album in albums)
-            {
-                users.Where(x => x.id == album.userId).ToList().ForEach(x => x.albums.Add(album));
-            }
-
-            foreach (var todo in todos)
-            {
-                users.Where(x => x.id == todo.userId).ToList().ForEach(x => x.todos.Add(todo));
-            }
-
-            DataContext.Users = users;
-            DataContext.Albums = albums;
-            DataContext.Comments = comments;
-            DataContext.Photos = photos;
-            DataContext.Posts = posts;
-            DataContext.Todos = todos;
-
-            Console.WriteLine("Downloading Complete");
         }
 
         //Downloads data from internet
@@ -88,11 +133,12 @@ namespace SEDC.AdvancedLinqSetup
 
                 }
             }
+
             return new T();
         }
 
         //Different serializers and deserializers
-        public static void SerializeObject<T>(T item, string fileName ,string savePath = null )
+        public static void SerializeObject<T>(T item, string fileName, string savePath = null)
         {
             string fullPath = (savePath != null ? (savePath + "\\") : "") + fileName;
 
@@ -103,7 +149,7 @@ namespace SEDC.AdvancedLinqSetup
             }
         }
 
-        public static T DeserializeObject<T>(string fileName, string savePath = null )
+        public static T DeserializeObject<T>(string fileName, string savePath = null)
         {
             string fullPath = (savePath != null ? (savePath + "\\") : "") + fileName;
             using (var stream = new FileStream(fullPath, FileMode.Open))
@@ -113,14 +159,14 @@ namespace SEDC.AdvancedLinqSetup
             }
         }
 
-        public static void SerializeJsonObject<T>(T item, string fileName ,string savePath = null)
+        public static void SerializeJsonObject<T>(T item, string fileName, string savePath = null)
         {
             string fullPath = (savePath != null ? (savePath + "\\") : "") + fileName;
             var serialized = JsonConvert.SerializeObject(item);
             File.WriteAllText(fullPath, serialized);
         }
 
-        public static T DeserializeJsonObject<T>( string fileName, string savePath = null)
+        public static T DeserializeJsonObject<T>(string fileName, string savePath = null)
         {
             string fullPath = (savePath != null ? (savePath + "\\") : "") + fileName;
             var serialized = File.ReadAllText(fullPath);
